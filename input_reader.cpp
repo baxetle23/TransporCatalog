@@ -2,7 +2,11 @@
 
 void AddData(Data& data) {
     std::string string_input;
-    while (std::cin >> string_input) {
+    int count_;
+   // std::ifstream in("/Users/lcash/Desktop/Qt_project/lol/infile");
+    std::cin >> count_;
+    while (count_-- >= 0) {
+		std::getline(std::cin, string_input);
         if (string_input[0] == 'S') {
             data.bus_stop_.insert(move(string_input));
         } else if (string_input[0] == 'B') {
@@ -12,11 +16,12 @@ void AddData(Data& data) {
 }
 
 void    Data::Print(std::ostream& out) const {
-    out << "Print bus stop" << std::endl;
+    using namespace std::string_literals;
+    out << "Print bus stop"s << std::endl;
     for (const auto& stop : bus_stop_) {
         out << stop << std::endl;
     }
-    out << "Print bus stop" << std::endl;
+    out << "Print bus route"s << std::endl;
     for (const auto& route : bus_route_) {
         out << route << std::endl;
     }
