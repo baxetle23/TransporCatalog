@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_set>
 #include <iostream>
+#include <fstream>
 
 struct Data {
     std::unordered_set<std::string> bus_stop_;

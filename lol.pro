@@ -15,3 +15,6 @@ HEADERS += \
     input_reader.h \
     stat_reader.h \
     transport_catalogue.h
+
+DISTFILES += \
+    infile

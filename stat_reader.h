@@ -1,4 +1,10 @@
-#ifndef STAT_READER_H
-#define STAT_READER_H
+#pragma once
 
-#endif // STAT_READER_H
+#include <vector>
+#include <string>
+#include <fstream>
+#include <iostream>
+
+std::vector<std::string> AddQuery();
+
+
