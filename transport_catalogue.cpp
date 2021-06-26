@@ -1,12 +1,12 @@
 #include "transport_catalogue.h"
 
 TransportCatalogue::StopBus TransportCatalogue::ParserBusStop(const std::string& text) {
-    auto end_name = std::find(text.begin() + 5, text.end(), ':');
-    auto comma = std::find(end_name, text.begin(), ',');
+    auto end_name = std::find(text.begin(), text.end(), ':');
+    auto comma = std::find(text.begin(), text.end(), ',');
     return {
         {text.begin() + 5, end_name},
-        std::stod(std::string{end_name + 2, comma}),
-        std::stod(std::string{comma + 2, text.end()})
+        std::stod(std::string{end_name + 1, comma}),
+        std::stod(std::string{comma + 1, text.end()})
     };
 }
 
@@ -93,27 +93,3 @@ std::vector<TransportCatalogue::BusInformation> TransportCatalogue::GetBusRoute(
     }
     return result;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

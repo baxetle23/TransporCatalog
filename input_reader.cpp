@@ -5,7 +5,8 @@ void AddData(Data& data) {
     int count_;
    // std::ifstream in("/Users/lcash/Desktop/Qt_project/lol/infile");
     std::cin >> count_;
-    while (count_-- >= 0) {
+    std::getline(std::cin, string_input);
+    while (--count_ >= 0) {
 		std::getline(std::cin, string_input);
         if (string_input[0] == 'S') {
             data.bus_stop_.insert(move(string_input));

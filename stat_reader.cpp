@@ -7,9 +7,10 @@ std::vector<std::string> AddQuery() {
    // std::ifstream in("/Users/lcash/Desktop/Qt_project/lol/infile");
     //in >> count_;
     //for (int i = 0; i <= count_; i++)
-   //     std::getline(std::cin, string_input);
+   // std::getline(std::cin, string_input);
     std::cin >> count_;
-    while(count_-- >= 0) {
+    getline(std::cin, string_input);
+    while(count_-- > 0) {
 		getline(std::cin, string_input);
         query.push_back(move(string_input));
     }

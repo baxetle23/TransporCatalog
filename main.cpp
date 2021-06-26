@@ -8,11 +8,9 @@ int main()
 {
     Data data;
     AddData(data);
-	std::cout << "SUCCESS\n";
     TransportCatalogue transport_catalogue;
     transport_catalogue.AddBusAndStop(data); 
     std::vector<std::string> query = AddQuery();
-	std::cout << "SUCCESS2\n";
     for (auto element : transport_catalogue.GetBusRoute(query)) {
         std::cout << "Bus "s << element.name << ": "s; 
         if (element.unique_stops) {
