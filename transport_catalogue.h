@@ -18,7 +18,8 @@ public:
         std::string_view name;
         int stops_on_route;
         int unique_stops;
-        double route_lenght;
+        double route_lenght_geo;
+        double route_lenght_fac;
     };
 
     struct StopInformation {
@@ -48,6 +49,14 @@ private:
         std::vector<StopBus *> stops_;
     };
 
+    class StopPointerHasher {
+    public:
+        size_t operator()(const std::pair<StopBus *,StopBus *>  stop) const {
+            return static_cast<size_t>(std::hash<const void*>{}(stop.first)) +
+                    static_cast<size_t>(std::hash<const void*>{}(stop.second)) * 43;
+        }
+    };
+
     //container Buses and stops
     std::deque<Bus> buses_;
     std::deque<StopBus> stops_;
@@ -55,8 +64,13 @@ private:
     std::unordered_map<std::string_view, Bus *> bus_route_;
     //name Stop -> missing bus
     std::unordered_map<std::string_view, std::unordered_set<Bus *>> stop_buses_;
+    //stopA - stopB -> distance
+    std::unordered_map<std::pair<StopBus *, StopBus *>, double, StopPointerHasher> nearby_stop_distance_;
 
-    StopBus ParserBusStop(const std::string& text);
+    StopBus ParserBusStopCord(const std::string& text);
+    void ParserBusStopDistance(const std::string& text);
+
     Bus ParserBus(const std::string& text);
-    void GetLenRoute(BusInformation& bus);
+    void GetLenRouteGeo(BusInformation& bus);
+    void GetLenRouteFac(BusInformation& bus);
 };

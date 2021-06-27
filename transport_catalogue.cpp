@@ -1,13 +1,48 @@
 #include "transport_catalogue.h"
 
-TransportCatalogue::StopBus TransportCatalogue::ParserBusStop(const std::string& text) {
+TransportCatalogue::StopBus TransportCatalogue::ParserBusStopCord(const std::string& text) {
     auto end_name = std::find(text.begin(), text.end(), ':');
-    auto comma = std::find(text.begin(), text.end(), ',');
+    auto comma_first = std::find(text.begin(), text.end(), ',');
+    auto comma_second = std::find(comma_first, text.end(), ',');
+    if (comma_first == comma_second) {
+        comma_second = text.end();
+    }
     return {
         {text.begin() + 5, end_name},
-        std::stod(std::string{end_name + 1, comma}),
-        std::stod(std::string{comma + 1, text.end()})
+        std::stod(std::string{end_name + 1, comma_first}),
+        std::stod(std::string{comma_first + 1, comma_second})
     };
+}
+
+void TransportCatalogue::ParserBusStopDistance(const std::string& text) {
+    using namespace std::string_literals;
+    auto end_name = std::find(text.begin(), text.end(), ':');
+    std::string name_stop {text.begin() + 5, end_name};
+    auto first = std::find_if(stops_.begin(), stops_.end(), [&](StopBus& stopbus) {
+            return stopbus.name_ == name_stop;
+    });
+
+    std::string::size_type n;
+    n = text.find(" to "s);
+    while (n != std::string::npos) {
+        auto it = text.begin() + n;
+        while (*(it - 1) != ' ')
+            it--;
+        double distance = std::stod(std::string{it, text.begin() + n});
+        it = text.begin() + n + 4;
+        while (*(it) != ',' && it !=text.end())
+            it++;
+        std::string stop2(text.begin() + n + 4, it);
+        auto second = std::find_if(stops_.begin(), stops_.end(), [&](StopBus& stopbus) {
+                return stopbus.name_ == stop2;
+        });
+        auto element = std::make_pair(&(*first), &(*second));
+        nearby_stop_distance_[element] = distance;
+        element = std::make_pair(&(*second), &(*first));
+        if (!nearby_stop_distance_.count(element))
+            nearby_stop_distance_[element] = distance;
+        n = text.find(" to "s, n + 4);
+    }
 }
 
 TransportCatalogue::Bus TransportCatalogue::ParserBus(const std::string& text) {
@@ -46,36 +81,53 @@ TransportCatalogue::Bus TransportCatalogue::ParserBus(const std::string& text) {
     };
 }
 
-// ??????? ??????? ???????????
+// add information about stops and buses
 void TransportCatalogue::AddBusAndStop(const Data& data) {
-   // ????????? ????????? ?????????
    for (auto& text : data.bus_stop_) {
-       stops_.push_back(ParserBusStop(text));
+       // add stops to storage
+       stops_.push_back(ParserBusStopCord(text));
+       // create container stop_name -> bus1, bus2 busN
        stop_buses_[stops_[stops_.size() - 1].name_];
    }
-   // ????????? ????????? ????????? ? ?????? ? ???????? ???????? ?? ?????
+
+   for (auto& text : data.bus_stop_) {
+       size_t pos = text.find(" to ");
+       if (pos != std::string::npos) {
+            ParserBusStopDistance(text);
+       }
+   }
+
    for (auto& text : data.bus_route_) {
+       // add buses to storage
        buses_.push_back(ParserBus(text));
+       // create container bus_name -> stop1 stop2 stopN
        bus_route_[buses_[buses_.size() - 1].name_] = &buses_[buses_.size() - 1];
    }
-   // ????????? ?????? ? ?????????? ????????? ????? ??? ?????????
+   // continue create container stop_name -> bus1, bus2 busN
    for (auto& bus : buses_) {
        for(auto& name_stop : bus.stops_)
            stop_buses_[name_stop->name_].insert(&bus);
    }
 }
 
-//use std::next
-void TransportCatalogue::GetLenRoute(TransportCatalogue::BusInformation& bus) {
+//need use std::next
+void TransportCatalogue::GetLenRouteGeo(TransportCatalogue::BusInformation& bus) {
     for (auto it = bus_route_[bus.name]->stops_.begin(); it <  bus_route_[bus.name]->stops_.end() - 1; ++it) {
-        bus.route_lenght +=  ComputeDistance({(*it)->x, (*it)->y}, {(*(it + 1))->x, (*(it + 1))->y});
+        bus.route_lenght_geo +=  ComputeDistance({(*it)->x, (*it)->y}, {(*(it + 1))->x, (*(it + 1))->y});
+    }
+}
+
+void TransportCatalogue::GetLenRouteFac(TransportCatalogue::BusInformation &bus) {
+    for (auto it = bus_route_[bus.name]->stops_.begin(); it < bus_route_[bus.name]->stops_.end() - 1; ++it) {
+        auto key = std::make_pair(*it, *(it + 1));
+        bus.route_lenght_fac += nearby_stop_distance_[key];
     }
 }
 
 //parser and method shoulb be separated
 TransportCatalogue::BusInformation TransportCatalogue::GetBusRoute(const std::string& bus_query) {
     std::unordered_set<std::string> uniq_stop;
-    BusInformation bus_info {"", 0, 0, 0};
+    BusInformation bus_info {"", 0, 0, 0, 0};
     bus_info.name = bus_query;
     bus_info.name.remove_prefix(4); //delete word "Bus "
     if (bus_route_.count(bus_info.name)) {
@@ -85,7 +137,8 @@ TransportCatalogue::BusInformation TransportCatalogue::GetBusRoute(const std::st
         });
         bus_info.unique_stops = uniq_stop.size();
         uniq_stop.clear();
-        GetLenRoute(bus_info);
+        GetLenRouteGeo(bus_info);
+        GetLenRouteFac(bus_info);
    }
    return bus_info;
 }
@@ -119,8 +172,9 @@ void TransportCatalogue::PrintBusRoute(TransportCatalogue::BusInformation&& elem
     std::cout << "Bus "s << element.name << ": "s;
     if (element.unique_stops) {
         std::cout << element.stops_on_route << " stops on route, "s
-                    << element.unique_stops << " unique stops, "
-                    << element.route_lenght << " route length" << std::endl;
+                    << element.unique_stops << " unique stops, "s
+                    << element.route_lenght_fac << " route length, "s
+                    << element.route_lenght_fac / element.route_lenght_geo << " curvature"s << std::endl;
     } else {
         std::cout << "not found"s << std::endl;
     }

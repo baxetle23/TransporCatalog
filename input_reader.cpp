@@ -3,7 +3,6 @@
 void AddData(Data& data) {
     std::string string_input;
     int count_;
-   // std::ifstream in("/Users/lcash/Desktop/Qt_project/lol/infile");
     std::cin >> count_;
     std::getline(std::cin, string_input);
     while (--count_ >= 0) {
