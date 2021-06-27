@@ -65,7 +65,7 @@ void TransportCatalogue::AddBusAndStop(const Data& data) {
    }
 }
 
-//??? ???????? ?????????? ???????????? std::next
+//use std::next
 void TransportCatalogue::GetLenRoute(TransportCatalogue::BusInformation& bus) {
     for (auto it = bus_route_[bus.name]->stops_.begin(); it <  bus_route_[bus.name]->stops_.end() - 1; ++it) {
         bus.route_lenght +=  ComputeDistance({(*it)->x, (*it)->y}, {(*(it + 1))->x, (*(it + 1))->y});
@@ -73,42 +73,72 @@ void TransportCatalogue::GetLenRoute(TransportCatalogue::BusInformation& bus) {
 }
 
 //parser and method shoulb be separated
-std::vector<TransportCatalogue::BusInformation> TransportCatalogue::GetBusRoute(const std::vector<std::string>& query) {
-    std::vector<BusInformation> result;
+TransportCatalogue::BusInformation TransportCatalogue::GetBusRoute(const std::string& bus_query) {
     std::unordered_set<std::string> uniq_stop;
-    for (auto& bus_query : query) {
-        BusInformation bus_info {"", 0, 0, 0}; 
-        bus_info.name = bus_query;
-        bus_info.name.remove_prefix(4); //delete word "Bus "
-        if (bus_route_.count(bus_info.name)) {
-            bus_info.stops_on_route = bus_route_.at(bus_info.name)->stops_.size();
-            for_each(bus_route_.at(bus_info.name)->stops_.begin(), bus_route_.at(bus_info.name)->stops_.end(), [&](auto stop) {
-                uniq_stop.insert(stop->name_);
-            });
-            bus_info.unique_stops = uniq_stop.size();
-            uniq_stop.clear();
-            GetLenRoute(bus_info);
-        }
-        result.push_back(bus_info);
-    }
-    return result;
+    BusInformation bus_info {"", 0, 0, 0};
+    bus_info.name = bus_query;
+    bus_info.name.remove_prefix(4); //delete word "Bus "
+    if (bus_route_.count(bus_info.name)) {
+        bus_info.stops_on_route = bus_route_.at(bus_info.name)->stops_.size();
+        for_each(bus_route_.at(bus_info.name)->stops_.begin(), bus_route_.at(bus_info.name)->stops_.end(), [&](auto stop) {
+            uniq_stop.insert(stop->name_);
+        });
+        bus_info.unique_stops = uniq_stop.size();
+        uniq_stop.clear();
+        GetLenRoute(bus_info);
+   }
+   return bus_info;
 }
 
-std::vector<TransportCatalogue::StopInformation> TransportCatalogue::GetStopInfo(const std::vector<std::string>& query) {
-    std::vector<StopInformation> result;
-    for (auto& stop_query : query) {
-        StopInformation stop_info;
-        stop_info.name = stop_query;
-        stop_info.name.remove_prefix(5); // delete word "Stop "
-        if (stop_buses_.count(stop_info.name)) {
-            stop_info.existence = true;
-            std::for_each(stop_buses_.at(stop_info.name).begin(), stop_buses_.at(stop_info.name).end(), [&](auto& Bus) {
-                stop_info.bus_name_.insert(Bus->name_);
-            });
-        } else {
-            stop_info.existence = false;
-        }
-        result.push_back(stop_info);
+TransportCatalogue::StopInformation TransportCatalogue::GetStopInfo(const std::string& stop_query) {
+    StopInformation stop_info;
+    stop_info.name = stop_query;
+    stop_info.name.remove_prefix(5); // delete word "Stop "
+    if (stop_buses_.count(stop_info.name)) {
+        stop_info.existence = true;
+        std::for_each(stop_buses_.at(stop_info.name).begin(), stop_buses_.at(stop_info.name).end(), [&](auto& Bus) {
+            stop_info.bus_name_.insert(Bus->name_);
+        });
+    } else {
+        stop_info.existence = false;
     }
-    return  result;
+    return stop_info;
+}
+
+
+void TransportCatalogue::ExecuteQuery(std::string& query) {
+    if (query[0] == 'B') {
+        PrintBusRoute(GetBusRoute(query));
+    } else if (query[0] == 'S') {
+        PrintStopInfo(GetStopInfo(query));
+    }
+}
+
+void TransportCatalogue::PrintBusRoute(TransportCatalogue::BusInformation&& element) {
+    using namespace std::string_literals;
+    std::cout << "Bus "s << element.name << ": "s;
+    if (element.unique_stops) {
+        std::cout << element.stops_on_route << " stops on route, "s
+                    << element.unique_stops << " unique stops, "
+                    << element.route_lenght << " route length" << std::endl;
+    } else {
+        std::cout << "not found"s << std::endl;
+    }
+}
+
+void TransportCatalogue::PrintStopInfo(TransportCatalogue::StopInformation&& element) {
+    using namespace std::string_literals;
+    if (element.existence) {
+        if (element.bus_name_.size()) {
+            std::cout << "Stop "s << element.name << ": buses "s;
+            for (const auto& bus : element.bus_name_) {
+                std::cout << bus << " "s;
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "Stop "s << element.name << ": no buses"s << std::endl;
+        }
+    } else {
+        std::cout << "Stop "s << element.name << ": not found"s << std::endl;
+    }
 }
