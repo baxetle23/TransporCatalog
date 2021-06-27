@@ -72,14 +72,14 @@ void TransportCatalogue::GetLenRoute(TransportCatalogue::BusInformation& bus) {
     }
 }
 
-
+//parser and method shoulb be separated
 std::vector<TransportCatalogue::BusInformation> TransportCatalogue::GetBusRoute(const std::vector<std::string>& query) {
     std::vector<BusInformation> result;
     std::unordered_set<std::string> uniq_stop;
     for (auto& bus_query : query) {
         BusInformation bus_info {"", 0, 0, 0}; 
         bus_info.name = bus_query;
-        bus_info.name.remove_prefix(4);
+        bus_info.name.remove_prefix(4); //delete word "Bus "
         if (bus_route_.count(bus_info.name)) {
             bus_info.stops_on_route = bus_route_.at(bus_info.name)->stops_.size();
             for_each(bus_route_.at(bus_info.name)->stops_.begin(), bus_route_.at(bus_info.name)->stops_.end(), [&](auto stop) {
@@ -92,4 +92,23 @@ std::vector<TransportCatalogue::BusInformation> TransportCatalogue::GetBusRoute(
         result.push_back(bus_info);
     }
     return result;
+}
+
+std::vector<TransportCatalogue::StopInformation> TransportCatalogue::GetStopInfo(const std::vector<std::string>& query) {
+    std::vector<StopInformation> result;
+    for (auto& stop_query : query) {
+        StopInformation stop_info;
+        stop_info.name = stop_query;
+        stop_info.name.remove_prefix(5); // delete word "Stop "
+        if (stop_buses_.count(stop_info.name)) {
+            stop_info.existence = true;
+            std::for_each(stop_buses_.at(stop_info.name).begin(), stop_buses_.at(stop_info.name).end(), [&](auto& Bus) {
+                stop_info.bus_name_.insert(Bus->name_);
+            });
+        } else {
+            stop_info.existence = false;
+        }
+        result.push_back(stop_info);
+    }
+    return  result;
 }

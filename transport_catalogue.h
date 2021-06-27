@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <set>
 
 class TransportCatalogue {
 public:
@@ -19,8 +20,16 @@ public:
         int unique_stops;
         double route_lenght;
     };
-    
+
+    struct StopInformation {
+        std::set<std::string_view> bus_name_;
+        std::string_view name;
+        bool existence; // this is costyl
+    };
+
     void AddBusAndStop(const Data& data);
+
+    std::vector<StopInformation> GetStopInfo(const std::vector<std::string> & query);
     std::vector<BusInformation> GetBusRoute(const std::vector<std::string>& query);
 
 private:
@@ -43,6 +52,7 @@ private:
     //?????? ?? ???????? ????????? ? ????????? 
     std::unordered_map<std::string_view, std::unordered_set<Bus *>> stop_buses_;
     //?????? ???????? - ?????????? ?? ??? ???????? ?? ??????
+
     StopBus ParserBusStop(const std::string& text);
     Bus ParserBus(const std::string& text);
     void GetLenRoute(BusInformation& bus);
